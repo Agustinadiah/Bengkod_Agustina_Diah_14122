@@ -3,37 +3,53 @@ import pandas as pd
 import numpy as np
 import joblib
 
-# ================= Load Model & Assets =================
+# ================= Setup & Load Assets =================
+st.set_page_config(page_title="Prediksi Obesitas", page_icon="🍔", layout="wide")
+
 model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
-st.set_page_config(page_title="Obesity Level Prediction", layout="centered")
-st.title("💡 Prediksi Tingkat Obesitas")
-st.markdown("Masukkan data berikut untuk memprediksi tingkat obesitas Anda.")
+# ================= Sidebar =================
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/854/854894.png", width=100)
+    st.title("🩺 Obesity Check App")
+    st.markdown("""
+    Aplikasi ini membantu Anda memprediksi tingkat obesitas berdasarkan kebiasaan hidup Anda.
 
-# ================= Input Form Layout =================
+    **Instruksi**:
+    - Isi data dengan lengkap
+    - Klik tombol prediksi
+    - Dapatkan hasil dan tipsnya!
+    """)
+
+# ================= Title & Description =================
+st.title("🏃‍♂️ Prediksi Tingkat Obesitas Berdasarkan Gaya Hidup")
+st.markdown("💬 *Masukkan informasi pribadi dan gaya hidup Anda untuk memprediksi kategori obesitas.*")
+
+# ================= Input Form =================
 with st.form("form_prediksi"):
+    st.header("📋 Masukkan Informasi Anda")
     col1, col2 = st.columns(2)
 
     with col1:
-        age = st.number_input("Usia", 10, 100, 25)
-        gender = st.selectbox("Jenis Kelamin", ["Male", "Female"])
-        weight = st.number_input("Berat Badan (kg)", 20, 200, 70)
-        favc = st.selectbox("Sering Makan Tinggi Kalori?", ["yes", "no"])
-        fcvc = st.slider("Konsumsi Sayur (1–3)", 1.0, 3.0, 2.0)
-        scc = st.selectbox("Pantau Kalori Harian?", ["yes", "no"])
+        age = st.number_input("🎂 Usia", 10, 100, 25)
+        gender = st.radio("🚻 Jenis Kelamin", ["Male", "Female"])
+        weight = st.number_input("⚖️ Berat Badan (kg)", 20, 200, 70)
+        favc = st.selectbox("🍟 Sering Makan Makanan Tinggi Kalori?", ["yes", "no"])
+        fcvc = st.slider("🥦 Konsumsi Sayur (1–3)", 1.0, 3.0, 2.0)
+        scc = st.selectbox("🧮 Pantau Kalori Harian?", ["yes", "no"])
 
     with col2:
-        calc = st.selectbox("Konsumsi Alkohol", ["no", "Sometimes", "Frequently", "Always"])
-        ch2o = st.slider("Konsumsi Air (liter/hari)", 0.0, 3.0, 2.0)
-        fhwo = st.selectbox("Riwayat Keluarga Overweight?", ["yes", "no"])
-        faf = st.slider("Aktivitas Fisik Mingguan (jam)", 0.0, 3.0, 1.0)
-        caec = st.selectbox("Ngemil?", ["no", "Sometimes", "Frequently", "Always"])
+        calc = st.selectbox("🍷 Konsumsi Alkohol", ["no", "Sometimes", "Frequently", "Always"])
+        ch2o = st.slider("💧 Konsumsi Air (liter/hari)", 0.0, 3.0, 2.0)
+        fhwo = st.selectbox("👨‍👩‍👧 Riwayat Keluarga Overweight?", ["yes", "no"])
+        faf = st.slider("🏋️‍♀️ Aktivitas Fisik Mingguan (jam)", 0.0, 3.0, 1.0)
+        caec = st.selectbox("🧁 Sering Ngemil?", ["no", "Sometimes", "Frequently", "Always"])
 
-    submitted = st.form_submit_button("🔍 Prediksi")
+    submitted = st.form_submit_button("🔍 Prediksi Sekarang")
 
-# ================= Preprocessing & Prediction =================
+# ================= Prediction Logic =================
 if submitted:
     input_dict = {
         "Age": age,
@@ -50,7 +66,7 @@ if submitted:
     }
 
     user_input = pd.DataFrame([input_dict])
-    user_input = user_input[[  # pastikan urutan sesuai training
+    user_input = user_input[[
         'Age', 'Gender', 'Weight', 'CALC', 'FAVC', 'FCVC', 'SCC',
         'CH2O', 'family_history_with_overweight', 'FAF', 'CAEC'
     ]]
@@ -59,11 +75,22 @@ if submitted:
     prediction = model.predict(X_scaled)
     result = label_encoder.inverse_transform(prediction)[0]
 
-    # ================= Output =================
-    st.markdown("---")
+    # ================= Result Output =================
+    st.markdown("----")
     st.subheader("📊 Hasil Prediksi:")
     st.success(f"Tingkat obesitas Anda diprediksi sebagai: **{result.replace('_', ' ')}**")
 
-    # Optional: tampilkan dataframe input
-    with st.expander("Lihat data yang dimasukkan"):
+    # ========== Personalized Feedback ==========
+    st.markdown("💡 **Saran Gaya Hidup:**")
+    if "Obesity" in result:
+        st.warning("⚠️ Anda termasuk dalam kategori obesitas. Pertimbangkan untuk meningkatkan aktivitas fisik dan menjaga pola makan.")
+    elif "Overweight" in result:
+        st.info("ℹ️ Anda termasuk dalam kategori kelebihan berat badan. Menjaga keseimbangan asupan dan olahraga akan sangat membantu.")
+    elif "Normal_Weight" in result:
+        st.success("✅ Berat badan Anda normal! Pertahankan gaya hidup sehat Anda.")
+    else:
+        st.info("📌 Kategori lainnya terdeteksi. Silakan konsultasi lebih lanjut dengan ahli gizi.")
+
+    # Optional: show input data
+    with st.expander("📁 Lihat Data Masukan"):
         st.dataframe(user_input)
