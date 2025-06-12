@@ -4,28 +4,55 @@ import numpy as np
 import joblib
 
 # ================= Setup & Load Assets =================
-st.set_page_config(page_title="Prediksi Obesitas", page_icon="🍔", layout="wide")
+st.set_page_config(page_title="Prediksi Obesitas", page_icon="🧁", layout="wide")
 
 model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
 
+# ================= CSS Custom =================
+st.markdown("""
+    <style>
+    body {
+        background-color: #fff8f0;
+    }
+    .main {
+        background-color: #fff8f5;
+    }
+    h1, h2, h3 {
+        color: #ff6f91;
+    }
+    .title-style {
+        background: linear-gradient(to right, #ffe0f0, #dfe7fd);
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        color: #5f4b8b;
+        font-size: 30px;
+        font-weight: bold;
+    }
+    .sidebar .sidebar-content {
+        background-color: #fef6fb;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # ================= Sidebar =================
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/854/854894.png", width=100)
-    st.title("🩺 Obesity Check App")
+    st.title("🩷 Obesity Check App")
     st.markdown("""
     Aplikasi ini membantu Anda memprediksi tingkat obesitas berdasarkan kebiasaan hidup Anda.
 
-    **Instruksi**:
-    - Isi data dengan lengkap
-    - Klik tombol prediksi
-    - Dapatkan hasil dan tipsnya!
+    **💡 Instruksi**:
+    - Isi data dengan lengkap 🎯
+    - Klik tombol prediksi 🔍
+    - Dapatkan hasil dan tipsnya! 🌈
     """)
 
 # ================= Title & Description =================
-st.title("🏃‍♂️ Prediksi Tingkat Obesitas Berdasarkan Gaya Hidup")
-st.markdown("💬 *Masukkan informasi pribadi dan gaya hidup Anda untuk memprediksi kategori obesitas.*")
+st.markdown('<div class="title-style">🏃‍♀️ Prediksi Tingkat Obesitas Berdasarkan Gaya Hidup 🍰</div>', unsafe_allow_html=True)
+st.markdown("💬 *Masukkan informasi pribadi dan gaya hidup Anda untuk memprediksi kategori obesitas dengan penuh warna!*")
 
 # ================= Input Form =================
 with st.form("form_prediksi"):
@@ -47,7 +74,7 @@ with st.form("form_prediksi"):
         faf = st.slider("🏋️‍♀️ Aktivitas Fisik Mingguan (jam)", 0.0, 3.0, 1.0)
         caec = st.selectbox("🧁 Sering Ngemil?", ["no", "Sometimes", "Frequently", "Always"])
 
-    submitted = st.form_submit_button("🔍 Prediksi Sekarang")
+    submitted = st.form_submit_button("🌟 Prediksi Sekarang")
 
 # ================= Prediction Logic =================
 if submitted:
@@ -66,8 +93,8 @@ if submitted:
     }
 
     user_input = pd.DataFrame([input_dict])
-    user_input = user_input[[
-        'Age', 'Gender', 'Weight', 'CALC', 'FAVC', 'FCVC', 'SCC',
+    user_input = user_input[[ 
+        'Age', 'Gender', 'Weight', 'CALC', 'FAVC', 'FCVC', 'SCC', 
         'CH2O', 'family_history_with_overweight', 'FAF', 'CAEC'
     ]]
 
@@ -77,20 +104,19 @@ if submitted:
 
     # ================= Result Output =================
     st.markdown("----")
-    st.subheader("📊 Hasil Prediksi:")
-    st.success(f"Tingkat obesitas Anda diprediksi sebagai: **{result.replace('_', ' ')}**")
+    st.subheader("🧸 Hasil Prediksi Anda:")
+    st.success(f"🎯 Tingkat obesitas Anda diprediksi sebagai: **{result.replace('_', ' ')}**")
 
     # ========== Personalized Feedback ==========
-    st.markdown("💡 **Saran Gaya Hidup:**")
+    st.markdown("💡 **Saran Gaya Hidup Sehat:**")
     if "Obesity" in result:
-        st.warning("⚠️ Anda termasuk dalam kategori obesitas. Pertimbangkan untuk meningkatkan aktivitas fisik dan menjaga pola makan.")
+        st.warning("🚨 Anda termasuk dalam kategori obesitas. Yuk mulai aktivitas fisik rutin dan perhatikan makananmu! 💪")
     elif "Overweight" in result:
-        st.info("ℹ️ Anda termasuk dalam kategori kelebihan berat badan. Menjaga keseimbangan asupan dan olahraga akan sangat membantu.")
+        st.info("📌 Anda dalam kategori kelebihan berat badan. Ayo jaga pola makan dan tambah gerak ya! 🧘‍♀️")
     elif "Normal_Weight" in result:
-        st.success("✅ Berat badan Anda normal! Pertahankan gaya hidup sehat Anda.")
+        st.success("🍀 Berat badan Anda normal! Pertahankan gaya hidup sehat dan tetap aktif ✨")
     else:
-        st.info("📌 Kategori lainnya terdeteksi. Silakan konsultasi lebih lanjut dengan ahli gizi.")
+        st.info("🌸 Kategori lain terdeteksi. Untuk hasil akurat, silakan konsultasikan ke ahli gizi.")
 
-    # Optional: show input data
     with st.expander("📁 Lihat Data Masukan"):
         st.dataframe(user_input)
