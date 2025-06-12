@@ -3,3 +3,4 @@ scikit-learn
 pandas
 numpy
 joblib
+pip install streamlit-lottie
