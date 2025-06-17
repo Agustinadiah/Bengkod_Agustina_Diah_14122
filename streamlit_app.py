@@ -1,144 +1,251 @@
-#Aplikasi ini dibangun dengan Streamlit dan model ML yang sudah dilatih. User hanya mengisi data kebiasaan hidupnya, lalu sistem akan memproses input tersebut dan memprediksi tingkat obesitas. Aplikasi ini memberikan prediksi yang dibalut dengan tampilan pastel lucu agar user-friendly dan nyaman digunakan.
-import streamlit as st #untuk membangun antarmuka aplikasi.
-import pandas as pd #untuk manipulasi data input pengguna dalam bentuk tabel.
-import numpy as np #digunakan untuk perhitungan numerik (meskipun tidak dipakai banyak di sini).
-import joblib #untuk memuat model Machine Learning dan scaler yang sudah dilatih sebelumnya.
+import streamlit as st
+import pandas as pd
+import numpy as np
+import joblib
+import matplotlib.pyplot as plt
+import seaborn as sns
+from PIL import Image
 
-# ================= Konfigurasi Halaman dan Tema =================
-st.set_page_config(page_title="Prediksi Obesitas", page_icon="🧁", layout="wide")
-#Mengatur tampilan halaman Streamlit:
-#page_title = judul tab browser.
-#page_icon = ikon kecil di tab browser (favicon).
-#layout="wide" = membuat tampilan lebih lebar.
+# ========================== CONFIG & THEME ==========================
+st.set_page_config(page_title="Obesity Predictor", layout="centered")
 
-# ================= Load Model & Tools ================
-model = joblib.load("model.pkl") #Memuat file model yang sudah disimpan dari proses pelatihan sebelumnya.
-scaler = joblib.load("scaler.pkl") #normalisasi data yang sudah disimpan dari proses pelatihan sebelumnya.
-label_encoder = joblib.load("label_encoder.pkl") #konversi label yang sudah disimpan dari proses pelatihan sebelumnya.
-
-# ================= Tambahan CSS Custom untuk Estetika =================
-#Bagian ini menggunakan HTML + CSS untuk mempercantik tampilan:
-#Mengatur warna latar belakang pastel.
-#Membuat judul lebih lucu dan feminin.
-#Mempercantik sidebar dan teks warna-warni.
-st.markdown("""
-    <style>
-    body {
-        background-color: #fff8f0;
-    }
-    .main {
-        background-color: #fff8f5;
-    }
-    h1, h2, h3 {
-        color: #ff6f91;
-    }
-    .title-style {
-        background: linear-gradient(to right, #ffe0f0, #dfe7fd);
-        padding: 20px;
-        border-radius: 15px;
-        text-align: center;
-        color: #5f4b8b;
-        font-size: 30px;
-        font-weight: bold;
-    }
-    .sidebar .sidebar-content {
-        background-color: #fef6fb;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# ================= Sidebar Aplikasi =================
-#Sidebar berisi:
-#Logo ikon lucu.
-#Judul sidebar.
-#Instruksi penggunaan aplikasi: mengisi data dan menekan tombol prediksi.
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/854/854894.png", width=100)
-    st.title("🩷 Obesity Check App")
+def apply_custom_theme():
     st.markdown("""
-    Aplikasi ini membantu Anda memprediksi tingkat obesitas berdasarkan kebiasaan hidup Anda.
+        <style>
+        .stApp {
+            background-color: #fce4ec;
+        }    
 
-    **💡 Instruksi**:
-    - Isi data dengan lengkap 🎯
-    - Klik tombol prediksi 🔍
-    - Dapatkan hasil dan tipsnya! 🌈
-    """)
+        /* Label */
+        label {
+            color: #3f0a29 !important;
+            font-weight: 600;
+        }
+    
+        /* Scrollbar (opsional) */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94426a;
+            border-radius: 4px;
+        }
+        section[data-testid="stSidebar"] {
+            background-color: #94426a !important;
+        }
 
-# ================= Judul dan Deskripsi Halaman Utama =================
-#Menampilkan judul utama aplikasi di tengah halaman dan memberi sedikit deskripsi untuk membimbing pengguna.
-st.markdown('<div class="title-style">🏃‍♀️ Prediksi Tingkat Obesitas Berdasarkan Gaya Hidup 🍰</div>', unsafe_allow_html=True)
-st.markdown("💬 *Masukkan informasi pribadi dan gaya hidup Anda untuk memprediksi kategori obesitas dengan penuh warna!*")
+        h1 {
+            color: #620e2c;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+        }
 
-# ================= Form Input Pengguna =================
-#Bagian ini menampilkan formulir tempat pengguna mengisi:
-#Usia, jenis kelamin, berat badan
-#Kebiasaan makan, minum, aktivitas fisik
-#Riwayat keluarga, dan kebiasaan ngemil
-with st.form("form_prediksi"):
-    st.header("📋 Masukkan Informasi Anda")
-    col1, col2 = st.columns(2) #Input ini dibagi menjadi dua kolom (col1 dan col2) agar tampilan lebih rapi.
+        h2, h3 {
+            color: #94426a;
+            font-family: 'Segoe UI', sans-serif;
+        }
 
-    with col1:
-        age = st.number_input("🎂 Usia", 10, 100, 25)
-        gender = st.radio("🚻 Jenis Kelamin", ["Male", "Female"])
-        weight = st.number_input("⚖️ Berat Badan (kg)", 20, 200, 70)
-        favc = st.selectbox("🍟 Sering Makan Makanan Tinggi Kalori?", ["yes", "no"])
-        fcvc = st.slider("🥦 Konsumsi Sayur (1–3)", 1.0, 3.0, 2.0)
-        scc = st.selectbox("🧮 Pantau Kalori Harian?", ["yes", "no"])
+        .stButton > button {
+            background-color: #620e2c;
+            color: white;
+            font-weight: bold;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            width: 100%;
+            border: none;
+        }
 
-    with col2:
-        calc = st.selectbox("🍷 Konsumsi Alkohol", ["no", "Sometimes", "Frequently", "Always"])
-        ch2o = st.slider("💧 Konsumsi Air (liter/hari)", 0.0, 3.0, 2.0)
-        fhwo = st.selectbox("👨‍👩‍👧 Riwayat Keluarga Overweight?", ["yes", "no"])
-        faf = st.slider("🏋️‍♀️ Aktivitas Fisik Mingguan (jam)", 0.0, 3.0, 1.0)
-        caec = st.selectbox("🧁 Sering Ngemil?", ["no", "Sometimes", "Frequently", "Always"])
+        .stButton > button:hover {
+            background-color: #3f0a29;
+            transition: 0.3s ease-in-out;
+        }
 
-    submitted = st.form_submit_button("🌟 Prediksi Sekarang") #Jika tombol ditekan, semua input akan dikumpulkan dan diproses untuk predik
+        section[data-testid="stSidebar"] .stButton > button {
+            background-color: #f5bcc1;
+            color: #3f0a29;
+        }
 
-# ================= Konversi Data Input ke Bentuk Siap Model =================
-if submitted:
-    input_dict = {       #input_dict = input dari pengguna dalam bentuk dictionary.
-        "Age": age, 
-        "Gender": 1 if gender == "Male" else 0,
-        "Weight": weight,
-        "CALC": {"no": 0, "Sometimes": 1, "Frequently": 2, "Always": 3}[calc],
-        "FAVC": 1 if favc == "yes" else 0,
-        "FCVC": fcvc,
-        "SCC": 1 if scc == "yes" else 0,
-        "CH2O": ch2o,
-        "family_history_with_overweight": 1 if fhwo == "yes" else 0,
-        "FAF": faf,
-        "CAEC": {"no": 0, "Sometimes": 1, "Frequently": 2, "Always": 3}[caec]
-    }
+        section[data-testid="stSidebar"] .stButton > button:hover {
+            background-color: #3f0a29;
+            color: white;
+        }
 
-    user_input = pd.DataFrame([input_dict])    #pd.DataFrame = diubah jadi tabel agar bisa dibaca model.
-    user_input = user_input[[ 
-        'Age', 'Gender', 'Weight', 'CALC', 'FAVC', 'FCVC', 'SCC', 
-        'CH2O', 'family_history_with_overweight', 'FAF', 'CAEC'
-    ]]
-    # ================ Prediksi dengan Model Machine Learning ===================
-    X_scaled = scaler.transform(user_input)    #scaler.transform = menyesuaikan skala data (normalisasi) agar cocok dengan model.
-    prediction = model.predict(X_scaled)    #model.predict = menghasilkan label prediksi.
-    result = label_encoder.inverse_transform(prediction)[0] #label_encoder.inverse_transform = mengubah label angka jadi kategori seperti Normal_Weight, Overweight, Obesity, dll.
+        footer {visibility: hidden;}
+        </style>
+    """, unsafe_allow_html=True)
 
-    # ================= Tampilkan Hasil Prediksi =================
-    #Menampilkan hasil prediksi dengan warna hijau dan emoji lucu.
-    st.markdown("----")
-    st.subheader("🧸 Hasil Prediksi Anda:")
-    st.success(f"🎯 Tingkat obesitas Anda diprediksi sebagai: **{result.replace('_', ' ')}**")
 
-    # ========== Berikan Saran Sesuai Kategori ==========
-    #Memberi saran yang personal dan edukatif berdasarkan kategori hasil prediksi.
-    st.markdown("💡 **Saran Gaya Hidup Sehat:**")
-    if "Obesity" in result:
-        st.warning("🚨 Anda termasuk dalam kategori obesitas. Yuk mulai aktivitas fisik rutin dan perhatikan makananmu! 💪")
-    elif "Overweight" in result:
-        st.info("📌 Anda dalam kategori kelebihan berat badan. Ayo jaga pola makan dan tambah gerak ya! 🧘‍♀️")
-    elif "Normal_Weight" in result:
-        st.success("🍀 Berat badan Anda normal! Pertahankan gaya hidup sehat dan tetap aktif ✨")
+apply_custom_theme()
+
+
+# ========================== LOAD MODEL ==========================
+model = joblib.load("model.pkl")
+scaler = joblib.load("scaler.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
+
+# ========================== SESSION STATE ==========================
+if "riwayat_input" not in st.session_state:
+    st.session_state.riwayat_input = []
+
+if "menu" not in st.session_state:
+    st.session_state.menu = "prediksi"
+
+# ========================== MENU PILIHAN ==========================
+with st.sidebar:
+    # Logo dan teks sambutan
+    st.markdown("""
+        <div style='text-align: center;'>
+            <img src='https://cdn-icons-png.flaticon.com/512/1048/1048953.png' width='80'/>
+            <h3 style='color:#ffffff;'>Hi! Selamat datang di<br>Obesity Predictor!</h3>
+            <p style='font-size: 14px; color: #fce4ec;'>
+                Di sini kamu bisa cek seberapa sehat gaya hidupmu dan prediksi tingkat obesitas berdasarkan kebiasaan harian.<br>
+                Gunakan fitur-fitur di bawah ini buat ngelihat tren atau riwayatmu juga, lho!<br><br>
+                <strong>Yuk kenali pola hidup kamu dan mulai hidup sehat! 💪</strong>
+            </p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Tombol menu interaktif dengan style dinamis
+    def sidebar_button(label, key):
+        style = """
+            background-color: #3f0a29; color: white;
+            font-weight: bold; border-radius: 10px; padding: 8px; width: 100%;
+            margin-bottom: 8px; border: none;
+        """ if st.session_state.menu == key else """
+            background-color: #f5bcc1; color: #3f0a29;
+            border-radius: 10px; padding: 8px; width: 100%;
+            margin-bottom: 8px; border: none;
+        """
+        return st.markdown(f"""
+            <form action="" method="post">
+                <button name="menu" type="submit" style="{style}">{label}</button>
+            </form>
+        """, unsafe_allow_html=True)
+
+    # Tombol menu
+    if st.button("🔍 Prediksi Obesitas"):
+        st.session_state.menu = "prediksi"
+    if st.button("📂 Riwayat Prediksi"):
+        st.session_state.menu = "riwayat"
+    if st.button("📊 Statistik & Tren"):
+        st.session_state.menu = "statistik"
+
+# ========================== MENU 1: PREDIKSI ==========================
+if st.session_state.menu == "prediksi":
+    st.title("💡 Cek Tingkat Obesitas Kamu")
+    with st.form("form_prediksi"):
+        col1, col2 = st.columns(2)
+
+        with col1:
+            age = st.number_input("Usia", 10, 100, 25)
+            gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
+            height = st.number_input("Tinggi Badan (cm)", 100, 250, 170)
+            weight = st.number_input("Berat Badan (kg)", 20, 200, 70)
+            favc = st.selectbox("Sering Makan Tinggi Kalori?", ["Ya", "Tidak"])
+            fcvc = st.number_input("Konsumsi Sayur (1–3)", 1.0, 3.0, 2.0, step=0.1)
+
+        with col2:
+            scc = st.selectbox("Pantau Kalori Harian?", ["Ya", "Tidak"])
+            calc = st.selectbox("Konsumsi Alkohol", ["Tidak", "Kadang-kadang", "Sering", "Selalu"])
+            ch2o = st.number_input("Konsumsi Air (liter/hari)", 0.0, 5.0, 2.0, step=0.1)
+            fhwo = st.selectbox("Riwayat Keluarga Overweight?", ["Ya", "Tidak"])
+            faf = st.number_input("Aktivitas Fisik Mingguan (jam)", 0.0, 20.0, 1.0, step=0.5)
+            caec = st.selectbox("Ngemil?", ["Tidak", "Kadang-kadang", "Sering", "Selalu"])
+
+        submitted = st.form_submit_button("🔍 Prediksi")
+
+    if submitted:
+        input_dict = {
+            "Age": age,
+            "Gender": 1 if gender == "Laki-laki" else 0,
+            "Height": height / 100,
+            "Weight": weight,
+            "CALC": {"Tidak": 0, "Kadang-kadang": 1, "Sering": 2, "Selalu": 3}[calc],
+            "FAVC": 1 if favc == "Ya" else 0,
+            "FCVC": fcvc,
+            "SCC": 1 if scc == "Ya" else 0,
+            "CH2O": ch2o,
+            "family_history_with_overweight": 1 if fhwo == "Ya" else 0,
+            "FAF": faf,
+            "CAEC": {"Tidak": 0, "Kadang-kadang": 1, "Sering": 2, "Selalu": 3}[caec]
+        }
+
+        user_input = pd.DataFrame([input_dict])
+        X_scaled = scaler.transform(user_input)
+        prediction = model.predict(X_scaled)
+        result = label_encoder.inverse_transform(prediction)[0]
+        kategori = result.replace("_", " ")
+
+        input_dict["Kategori"] = kategori
+        st.session_state.riwayat_input.append(input_dict)
+
+        st.markdown(f"""
+            <div style="background-color:#620e2c; color:white; padding:12px 16px; border-radius:10px; text-align:center; margin-top:15px;">
+                <p style="margin:0; font-size:16px;">Tingkat obesitas kamu diprediksi sebagai:</p>
+                <p style="margin:5px 0 0; font-size:20px; font-weight:bold; color:#ffe4f1;">{kategori}</p>
+            </div>
+        """, unsafe_allow_html=True)
+    
+        rekomendasi = {
+            "Insufficient Weight": "🍽️ Perbanyak konsumsi kalori sehat...",
+            "Normal Weight": "✅ Pertahankan pola hidup sehat...",
+            "Overweight Level I": "⚠️ Kurangi makanan tinggi gula dan lemak...",
+            "Overweight Level II": "⚠️ Tambah frekuensi olahraga...",
+            "Obesity Type I": "🚨 Konsultasi gizi dan program penurunan berat badan...",
+            "Obesity Type II": "🚨 Intervensi profesional dibutuhkan...",
+            "Obesity Type III": "🛑 Butuh penanganan medis intensif..."
+        }
+        
+        st.markdown(f"""
+            <div style="background-color:#fff0f5; color:#3f0a29; padding:15px; border-left: 5px solid #db90be; border-radius:10px; margin-top:15px;">
+                {rekomendasi.get(kategori, "Tidak ada rekomendasi.")}
+            </div>
+        """, unsafe_allow_html=True)
+
+# ========================== MENU 2: RIWAYAT ==========================
+elif st.session_state.menu == "riwayat":
+    st.title("📂 Riwayat Prediksi Obesitas")
+
+    if st.session_state.riwayat_input:
+        df_riwayat = pd.DataFrame(st.session_state.riwayat_input)
+        st.dataframe(df_riwayat)
+
+        if st.button("🔄 Reset Riwayat"):
+            st.session_state.riwayat_input = []
+            st.success("Riwayat berhasil dihapus.")
     else:
-        st.info("🌸 Kategori lain terdeteksi. Untuk hasil akurat, silakan konsultasikan ke ahli gizi.")
+        st.info("Belum ada riwayat yang tersimpan nih. Yuk mulai prediksi dulu!")
 
-    # =================== Tampilkan Data Input Kembali ==============
-    with st.expander("📁 Lihat Data Masukan"): #Menampilkan kembali data yang diinput agar pengguna bisa mengecek.Menggunakan expander agar tampilannya tetap rapi.
-        st.dataframe(user_input)
+# ========================== MENU 3: STATISTIK ==========================
+elif st.session_state.menu == "statistik":
+    st.title("📊 Statistik & Tren dari Riwayat Prediksi")
+
+    if st.session_state.riwayat_input:
+        df = pd.DataFrame(st.session_state.riwayat_input)
+
+        st.subheader("Distribusi Kategori Obesitas")
+        fig1, ax1 = plt.subplots()
+        df["Kategori"].value_counts().plot(kind='bar', color='#db90be', ax=ax1)
+        ax1.set_ylabel("Jumlah")
+        st.pyplot(fig1)
+
+        st.subheader("Rata-rata Karakteristik Pengguna")
+        st.dataframe(df[['Age', 'Height', 'Weight', 'FCVC', 'CH2O', 'FAF']].mean().round(2).rename("Rata-rata"))
+
+        st.subheader("Distribusi Berat Badan per Kategori")
+        fig2, ax2 = plt.subplots()
+        sns.boxplot(data=df, x="Kategori", y="Weight", ax=ax2, palette="pastel")
+        ax2.set_xticklabels(ax2.get_xticklabels(), rotation=30, ha="right")
+        st.pyplot(fig2)
+
+    else:
+        st.warning("Belum ada data prediksi nih. Coba lakukan prediksi dulu ya!")
+
+# ========================== FOOTER ==========================
+st.markdown("---")
+st.markdown(
+    "<p style='text-align: center; color: #3f0a29;'>by <b>Agustina Diah</b> | NIM <b>A11.2022.14122</b></p>",
+    unsafe_allow_html=True
+)
