@@ -77,11 +77,10 @@ def apply_custom_theme():
 apply_custom_theme()
 
 # ========================== LOAD MODEL ==========================
-artifacts = joblib.load("artifacts.pkl")
-model = artifacts["model"]
-scaler = artifacts["scaler"]
-label_encoder = artifacts["label_encoder"]
-feature_names = artifacts["feature_names"]
+model = joblib.load("model.pkl")
+scaler = joblib.load("scaler.pkl")
+label_encoder = joblib.load("label_encoder.pkl")
+
 
 # ========================== SESSION STATE ==========================
 if "riwayat_input" not in st.session_state:
