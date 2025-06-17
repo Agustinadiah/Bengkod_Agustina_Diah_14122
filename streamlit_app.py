@@ -246,6 +246,6 @@ elif st.session_state.menu == "statistik":
 # ========================== FOOTER ==========================
 st.markdown("---")
 st.markdown(
-    "<p style='text-align: center; color: #3f0a29;'>by <b>nadatiyasa</b> | NIM <b>A11.2022.14217</b></p>",
+    "<p style='text-align: center; color: #3f0a29;'>by <b>agsutina diah</b> | NIM <b>A11.2022.14122</b></p>",
     unsafe_allow_html=True
 )
