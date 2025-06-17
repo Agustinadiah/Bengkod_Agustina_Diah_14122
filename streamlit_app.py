@@ -49,7 +49,8 @@ apply_custom_theme()
 model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
-feature_names = joblib.load("feature_names.pkl")
+# Fallback feature names if file not found
+feature_names = ['Age', 'Gender', 'Height', 'Weight', 'FCVC', 'FAF', 'CH2O', 'FAVC', 'SCC', 'CALC', 'family_history_with_overweight', 'CAEC']
 
 # ========================== SESSION STATE ==========================
 if "riwayat_input" not in st.session_state:
