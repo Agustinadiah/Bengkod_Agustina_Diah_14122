@@ -12,37 +12,13 @@ st.set_page_config(page_title="Obesity Predictor", layout="centered")
 def apply_custom_theme():
     st.markdown("""
         <style>
-        .stApp {
-            background-color: #fce4ec;
-        }
-
-        label {
-            color: #3f0a29 !important;
-            font-weight: 600;
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #94426a;
-            border-radius: 4px;
-        }
-        section[data-testid="stSidebar"] {
-            background-color: #94426a !important;
-        }
-
-        h1 {
-            color: #620e2c;
-            font-family: 'Segoe UI', sans-serif;
-            text-align: center;
-        }
-
-        h2, h3 {
-            color: #94426a;
-            font-family: 'Segoe UI', sans-serif;
-        }
-
+        .stApp { background-color: #fce4ec; }
+        label { color: #3f0a29 !important; font-weight: 600; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #94426a; border-radius: 4px; }
+        section[data-testid="stSidebar"] { background-color: #94426a !important; }
+        h1 { color: #620e2c; font-family: 'Segoe UI', sans-serif; text-align: center; }
+        h2, h3 { color: #94426a; font-family: 'Segoe UI', sans-serif; }
         .stButton > button {
             background-color: #620e2c;
             color: white;
@@ -54,22 +30,18 @@ def apply_custom_theme():
             width: 100%;
             border: none;
         }
-
         .stButton > button:hover {
             background-color: #3f0a29;
             transition: 0.3s ease-in-out;
         }
-
         section[data-testid="stSidebar"] .stButton > button {
             background-color: #f5bcc1;
             color: #3f0a29;
         }
-
         section[data-testid="stSidebar"] .stButton > button:hover {
             background-color: #3f0a29;
             color: white;
         }
-
         footer {visibility: hidden;}
         </style>
     """, unsafe_allow_html=True)
@@ -80,7 +52,6 @@ apply_custom_theme()
 model = joblib.load("model.pkl")
 scaler = joblib.load("scaler.pkl")
 label_encoder = joblib.load("label_encoder.pkl")
-
 
 # ========================== SESSION STATE ==========================
 if "riwayat_input" not in st.session_state:
@@ -148,6 +119,12 @@ if st.session_state.menu == "prediksi":
             "FAF": faf,
             "CAEC": {"Tidak": 0, "Kadang-kadang": 1, "Sering": 2, "Selalu": 3}[caec]
         }
+
+        # ✅ Diperbaiki: Tambahkan daftar fitur yang sesuai dengan urutan pelatihan
+        feature_names = [
+            "Age", "Gender", "Height", "Weight", "CALC", "FAVC", "FCVC",
+            "SCC", "CH2O", "family_history_with_overweight", "FAF", "CAEC"
+        ]
 
         user_input = pd.DataFrame([input_dict])[feature_names]
         X_scaled = scaler.transform(user_input)
@@ -222,6 +199,6 @@ elif st.session_state.menu == "statistik":
 # ========================== FOOTER ==========================
 st.markdown("---")
 st.markdown(
-    "<p style='text-align: center; color: #3f0a29;'>by <b>agsutina diah</b> | NIM <b>A11.2022.14122</b></p>",
+    "<p style='text-align: center; color: #3f0a29;'>by <b>agustina diah</b> | NIM <b>A11.2022.14122</b></p>",
     unsafe_allow_html=True
 )
