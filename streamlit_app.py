@@ -14,15 +14,13 @@ def apply_custom_theme():
         <style>
         .stApp {
             background-color: #fce4ec;
-        }    
+        }
 
-        /* Label */
         label {
             color: #3f0a29 !important;
             font-weight: 600;
         }
-    
-        /* Scrollbar (opsional) */
+
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -76,14 +74,14 @@ def apply_custom_theme():
         </style>
     """, unsafe_allow_html=True)
 
-
 apply_custom_theme()
 
-
 # ========================== LOAD MODEL ==========================
-model = joblib.load("model.pkl")
-scaler = joblib.load("scaler.pkl")
-label_encoder = joblib.load("label_encoder.pkl")
+artifacts = joblib.load("artifacts.pkl")
+model = artifacts["model"]
+scaler = artifacts["scaler"]
+label_encoder = artifacts["label_encoder"]
+feature_names = artifacts["feature_names"]
 
 # ========================== SESSION STATE ==========================
 if "riwayat_input" not in st.session_state:
@@ -94,37 +92,17 @@ if "menu" not in st.session_state:
 
 # ========================== MENU PILIHAN ==========================
 with st.sidebar:
-    # Logo dan teks sambutan
     st.markdown("""
         <div style='text-align: center;'>
             <img src='https://cdn-icons-png.flaticon.com/512/1048/1048953.png' width='80'/>
             <h3 style='color:#ffffff;'>Hi! Selamat datang di<br>Obesity Predictor!</h3>
             <p style='font-size: 14px; color: #fce4ec;'>
-                Di sini kamu bisa cek seberapa sehat gaya hidupmu dan prediksi tingkat obesitas berdasarkan kebiasaan harian.<br>
-                Gunakan fitur-fitur di bawah ini buat ngelihat tren atau riwayatmu juga, lho!<br><br>
+                Cek seberapa sehat gaya hidupmu dan prediksi tingkat obesitas.<br><br>
                 <strong>Yuk kenali pola hidup kamu dan mulai hidup sehat! 💪</strong>
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Tombol menu interaktif dengan style dinamis
-    def sidebar_button(label, key):
-        style = """
-            background-color: #3f0a29; color: white;
-            font-weight: bold; border-radius: 10px; padding: 8px; width: 100%;
-            margin-bottom: 8px; border: none;
-        """ if st.session_state.menu == key else """
-            background-color: #f5bcc1; color: #3f0a29;
-            border-radius: 10px; padding: 8px; width: 100%;
-            margin-bottom: 8px; border: none;
-        """
-        return st.markdown(f"""
-            <form action="" method="post">
-                <button name="menu" type="submit" style="{style}">{label}</button>
-            </form>
-        """, unsafe_allow_html=True)
-
-    # Tombol menu
     if st.button("🔍 Prediksi Obesitas"):
         st.session_state.menu = "prediksi"
     if st.button("📂 Riwayat Prediksi"):
@@ -172,7 +150,7 @@ if st.session_state.menu == "prediksi":
             "CAEC": {"Tidak": 0, "Kadang-kadang": 1, "Sering": 2, "Selalu": 3}[caec]
         }
 
-        user_input = pd.DataFrame([input_dict])
+        user_input = pd.DataFrame([input_dict])[feature_names]
         X_scaled = scaler.transform(user_input)
         prediction = model.predict(X_scaled)
         result = label_encoder.inverse_transform(prediction)[0]
@@ -187,7 +165,7 @@ if st.session_state.menu == "prediksi":
                 <p style="margin:5px 0 0; font-size:20px; font-weight:bold; color:#ffe4f1;">{kategori}</p>
             </div>
         """, unsafe_allow_html=True)
-    
+
         rekomendasi = {
             "Insufficient Weight": "🍽️ Perbanyak konsumsi kalori sehat...",
             "Normal Weight": "✅ Pertahankan pola hidup sehat...",
@@ -197,7 +175,7 @@ if st.session_state.menu == "prediksi":
             "Obesity Type II": "🚨 Intervensi profesional dibutuhkan...",
             "Obesity Type III": "🛑 Butuh penanganan medis intensif..."
         }
-        
+
         st.markdown(f"""
             <div style="background-color:#fff0f5; color:#3f0a29; padding:15px; border-left: 5px solid #db90be; border-radius:10px; margin-top:15px;">
                 {rekomendasi.get(kategori, "Tidak ada rekomendasi.")}
@@ -216,7 +194,7 @@ elif st.session_state.menu == "riwayat":
             st.session_state.riwayat_input = []
             st.success("Riwayat berhasil dihapus.")
     else:
-        st.info("Belum ada riwayat yang tersimpan nih. Yuk mulai prediksi dulu!")
+        st.info("Belum ada riwayat yang tersimpan. Yuk mulai prediksi dulu!")
 
 # ========================== MENU 3: STATISTIK ==========================
 elif st.session_state.menu == "statistik":
@@ -239,9 +217,8 @@ elif st.session_state.menu == "statistik":
         sns.boxplot(data=df, x="Kategori", y="Weight", ax=ax2, palette="pastel")
         ax2.set_xticklabels(ax2.get_xticklabels(), rotation=30, ha="right")
         st.pyplot(fig2)
-
     else:
-        st.warning("Belum ada data prediksi nih. Coba lakukan prediksi dulu ya!")
+        st.warning("Belum ada data prediksi. Coba lakukan prediksi dulu ya!")
 
 # ========================== FOOTER ==========================
 st.markdown("---")
